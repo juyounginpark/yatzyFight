@@ -4,21 +4,32 @@ using System.Collections.Generic;
 using PixPlays.ElementalVFX;
 
 [System.Serializable]
-public class BeamData
+public class AttackVfxData
 {
     public ElementType type;
+    public GameObject bulletPrefab;
     public GameObject beamPrefab;
 }
 
 public class Attack : MonoBehaviour
 {
-    [Header("빔 설정")]
-    public BeamData[] beamDatabase;
+    [Header("타입별 Bullet / Beam")]
+    public AttackVfxData[] vfxDatabase;
+
+    [Header("Bullet 설정")]
+    public float bulletSpeed = 20f;
+
+    [Header("Beam 설정")]
     public float beamDuration = 0.5f;
+
+    [Header("공격 후 딜레이")]
+    public float postDamageDelay = 0.8f;
 
     private Role role;
     private DiceType diceType;
+    private DiceUI diceUI;
     private Choice choice;
+    private RetryUI retryUI;
     private bool isAttacking;
 
     public bool IsAttacking => isAttacking;
@@ -27,7 +38,9 @@ public class Attack : MonoBehaviour
     {
         role = FindObjectOfType<Role>();
         diceType = FindObjectOfType<DiceType>();
+        diceUI = FindObjectOfType<DiceUI>();
         choice = FindObjectOfType<Choice>();
+        retryUI = FindObjectOfType<RetryUI>();
     }
 
     public void Execute(GameObject target, int score)
@@ -36,16 +49,16 @@ public class Attack : MonoBehaviour
         StartCoroutine(AttackSequence(target, score));
     }
 
-    [Header("공격 후 딜레이")]
-    public float postDamageDelay = 0.8f;
-
     IEnumerator AttackSequence(GameObject target, int score)
     {
         isAttacking = true;
 
-        // 각 주사위에서 해당 타입의 빔 발사
-        List<GameObject> beams = new List<GameObject>();
-        bool anyBeamFired = false;
+        if (choice != null)
+            choice.Deselect();
+
+        List<GameObject> spawned = new List<GameObject>();
+        bool anyFired = false;
+        float longestWait = 0f;
 
         if (diceType != null && role != null && role.DiceObjects != null && target != null)
         {
@@ -54,51 +67,41 @@ public class Attack : MonoBehaviour
             for (int i = 0; i < role.diceCount; i++)
             {
                 ElementType t = diceType.GetDiceType(i);
-                if (t == ElementType.Normal) continue;
-
-                GameObject prefab = GetBeamPrefab(t);
-                if (prefab == null) continue;
+                // Fired → Fire의 VFX 사용
+                ElementType lookupType = (t == ElementType.Fired) ? ElementType.Fire : t;
+                AttackVfxData data = GetVfxData(lookupType);
+                if (data == null) continue;
 
                 Vector3 origin = role.DiceObjects[i].transform.position;
-                Vector3 direction = targetPos - origin;
-                float distance = direction.magnitude;
+                bool isSynergy = diceUI != null && IsSynergyType(t);
 
-                anyBeamFired = true;
-
-                // BeamVfx 컴포넌트 확인
-                BeamVfx beamVfx = prefab.GetComponent<BeamVfx>();
-                if (beamVfx != null)
+                if (isSynergy && data.beamPrefab != null)
                 {
-                    GameObject beam = Instantiate(prefab, Vector3.zero, Quaternion.identity);
-                    VfxData data = new VfxData(origin, targetPos, beamDuration, 1.0f);
-                    beam.GetComponent<BeamVfx>().Play(data);
+                    // 시너지 활성 → beam
+                    anyFired = true;
+                    if (beamDuration > longestWait) longestWait = beamDuration;
+                    FireVfx(data.beamPrefab, origin, targetPos, beamDuration, spawned);
                 }
-                else
+                else if (data.bulletPrefab != null)
                 {
-                    Vector3 midPoint = (origin + targetPos) * 0.5f;
-                    GameObject beam = Instantiate(prefab, midPoint, Quaternion.LookRotation(direction));
-                    Vector3 scale = beam.transform.localScale;
-                    scale.z = distance;
-                    beam.transform.localScale = scale;
-                    beams.Add(beam);
+                    // 비시너지 → 해당 원소 bullet
+                    anyFired = true;
+                    float dist = Vector3.Distance(origin, targetPos);
+                    float travelTime = dist / bulletSpeed;
+                    if (travelTime > longestWait) longestWait = travelTime;
+                    FireVfx(data.bulletPrefab, origin, targetPos, travelTime, spawned);
                 }
             }
 
-            // 빔이 하나라도 발사됐으면 beamDuration만큼 대기
-            if (anyBeamFired)
-            {
-                yield return new WaitForSeconds(beamDuration);
-            }
+            if (anyFired)
+                yield return new WaitForSeconds(longestWait);
 
-            // 단순 빔 정리
-            foreach (GameObject beam in beams)
+            foreach (GameObject obj in spawned)
             {
-                if (beam != null)
-                    Destroy(beam);
+                if (obj != null) Destroy(obj);
             }
         }
 
-        // 데미지
         if (target != null)
         {
             HP hp = target.GetComponent<HP>();
@@ -106,15 +109,14 @@ public class Attack : MonoBehaviour
                 hp.TakeDamage(score);
         }
 
-        // 데미지 연출 끝날 때까지 대기
         yield return new WaitForSeconds(postDamageDelay);
 
-        // select 해제 + lock 해제 + 롤
+        // 리롤 횟수 초기화
+        if (retryUI != null)
+            retryUI.ResetRetries();
+
         if (choice != null)
-        {
-            choice.Deselect();
             choice.UnlockAll();
-        }
 
         if (role != null && !role.IsRolling)
             role.RollAllDice();
@@ -122,14 +124,45 @@ public class Attack : MonoBehaviour
         isAttacking = false;
     }
 
-    GameObject GetBeamPrefab(ElementType type)
+    void FireVfx(GameObject prefab, Vector3 origin, Vector3 targetPos, float duration, List<GameObject> spawned)
     {
-        if (beamDatabase == null) return null;
-
-        for (int i = 0; i < beamDatabase.Length; i++)
+        BaseVfx vfx = prefab.GetComponent<BaseVfx>();
+        if (vfx != null)
         {
-            if (beamDatabase[i].type == type)
-                return beamDatabase[i].beamPrefab;
+            GameObject obj = Instantiate(prefab, Vector3.zero, Quaternion.identity);
+            VfxData vd = new VfxData(origin, targetPos, duration, 1.0f);
+            obj.GetComponent<BaseVfx>().Play(vd);
+        }
+        else
+        {
+            Vector3 direction = targetPos - origin;
+            float distance = direction.magnitude;
+            Vector3 midPoint = (origin + targetPos) * 0.5f;
+            GameObject obj = Instantiate(prefab, midPoint, Quaternion.LookRotation(direction));
+            Vector3 scale = obj.transform.localScale;
+            scale.z = distance;
+            obj.transform.localScale = scale;
+            spawned.Add(obj);
+        }
+    }
+
+    bool IsSynergyType(ElementType t)
+    {
+        if ((t == ElementType.Fire || t == ElementType.Fired) && diceUI.SynergyFire) return true;
+        if (t == ElementType.Water && diceUI.SynergyWater) return true;
+        if (t == ElementType.Wind && diceUI.SynergyWind) return true;
+        if (t == ElementType.Earth && diceUI.SynergyEarth) return true;
+        return false;
+    }
+
+    AttackVfxData GetVfxData(ElementType type)
+    {
+        if (vfxDatabase == null) return null;
+
+        for (int i = 0; i < vfxDatabase.Length; i++)
+        {
+            if (vfxDatabase[i].type == type)
+                return vfxDatabase[i];
         }
         return null;
     }

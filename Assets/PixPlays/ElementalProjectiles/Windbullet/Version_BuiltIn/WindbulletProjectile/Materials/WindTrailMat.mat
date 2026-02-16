@@ -54,44 +54,16 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
-    - _BaseMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _BumpMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     - _Color_Texture:
         m_Texture: {fileID: 2800000, guid: 0613aad931dd9af4286d24633909c4dc, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _DetailAlbedoMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _DetailMask:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _DetailNormalMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     - _Disolve_Texture:
-        m_Texture: {fileID: 2800000, guid: 21e2c8771962d674e87474f202698aa1, type: 3}
+        m_Texture: {fileID: 2800000, guid: 3bba4c07b454ef24f9354a21fa616b7d, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Distort_Texture:
         m_Texture: {fileID: 2800000, guid: 21e2c8771962d674e87474f202698aa1, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _EmissionMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _MainTex:
-        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Mask_1:
@@ -100,22 +72,6 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _Mask_2:
         m_Texture: {fileID: 2800000, guid: 1f2d74aaec92e464784355f9e8888f25, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _MetallicGlossMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _OcclusionMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _ParallaxMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _SpecGlossMap:
-        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Vertex_Offset_Mask:
@@ -155,17 +111,11 @@ Material:
     - _BUILTIN_ZWrite: 0
     - _BUILTIN_ZWriteControl: 0
     - _Blend: 0
-    - _BumpScale: 1
     - _CastShadows: 1
-    - _ClearCoatMask: 0
-    - _ClearCoatSmoothness: 0
     - _Color_Rotate: 0
     - _Color_Smooth: 0.1
     - _Cull: 2
-    - _Cutoff: 0.5
     - _Depth_Distance: 1.72
-    - _DetailAlbedoMapScale: 1
-    - _DetailNormalMapScale: 1
     - _Disolve: 0
     - _DisolveSmooth: 1
     - _Disolve_Distortion: 0
@@ -176,11 +126,8 @@ Material:
     - _Distort_Rotate: 0
     - _Distort_Strength: 0.1
     - _DstBlend: 10
-    - _EnvironmentReflections: 1
+    - _DstBlendAlpha: 10
     - _Fresnel_AddOrMultiply: 1
-    - _GlossMapScale: 0
-    - _Glossiness: 0
-    - _GlossyReflections: 0
     - _Initial_Color_Offset: 0
     - _Mask1_Distortion: 0
     - _Mask1_PositionUVs: 0
@@ -189,33 +136,24 @@ Material:
     - _Mask_1_Rotate: 0
     - _Mask_2_Rotate: 0
     - _Mask_AddOrMultiply: 0
-    - _Metallic: 0
-    - _OcclusionStrength: 1
     - _Offset_Offset_With_UV_g: 0
     - _Offset_Rotate: 0
     - _Offset_Strength: 0
-    - _Parallax: 0.005
     - _Power: 5
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _ReceiveShadows: 1
-    - _Smoothness: 0.5
-    - _SmoothnessTextureChannel: 0
-    - _SpecularHighlights: 1
     - _SrcBlend: 5
+    - _SrcBlendAlpha: 1
     - _Surface: 1
     - _SwitchColors: 0
     - _UseFresnel: 0
     - _UseParticleSystemColor: 0
     - _Use_Soft_Particles: 0
     - _Use_Texture: 0
-    - _WorkflowMode: 1
     - _ZTest: 4
     - _ZWrite: 0
     - _ZWriteControl: 0
     m_Colors:
-    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _Color_1: {r: 1, g: 0.9764151, b: 0.9764151, a: 0}
     - _Color_2: {r: 0, g: 0, b: 1, a: 0}
     - _Color_Scroll: {r: 0, g: 0, b: 0, a: 0}
@@ -223,7 +161,6 @@ Material:
     - _Disolve_Remap: {r: 0, g: 1, b: 0, a: 0}
     - _Disolve_Scroll: {r: 0, g: 0, b: 0, a: 0}
     - _Distort_Scroll: {r: 2, g: 0, b: 0, a: 0}
-    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _Fresnel_Remap: {r: 0, g: 1, b: 0, a: 0}
     - _Mask1_Remap: {r: -0.03, g: 3.94, b: 0, a: 0}
     - _Mask1_Scroll: {r: -2, g: 0, b: 0, a: 0}
@@ -231,6 +168,5 @@ Material:
     - _Mask2_Scroll: {r: 0, g: 0, b: 0, a: 0}
     - _Offset_Mask_Smoothstep: {r: 0, g: 0, b: 0, a: 0}
     - _Offset_Scroll: {r: 0, g: 0, b: 0, a: 0}
-    - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

@@ -9,6 +9,18 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 31fc8cbe82b70ba4ca86014d7df73c1d, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 31fc8cbe82b70ba4ca86014d7df73c1d, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 31fc8cbe82b70ba4ca86014d7df73c1d, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 31fc8cbe82b70ba4ca86014d7df73c1d, type: 3}
       propertyPath: m_LocalPosition.x
       value: 4
       objectReference: {fileID: 0}
@@ -47,6 +59,10 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 31fc8cbe82b70ba4ca86014d7df73c1d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 31fc8cbe82b70ba4ca86014d7df73c1d, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -7511558181221131132, guid: 31fc8cbe82b70ba4ca86014d7df73c1d, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -113,13 +129,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41a753a574d748541a763f2205ef8b28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Attack
-  beamDatabase:
+  vfxDatabase:
+  - type: 0
+    bulletPrefab: {fileID: 2268428576765071778, guid: 1274b6c6bab1c714aa82c353e4fc3536, type: 3}
+    beamPrefab: {fileID: 2268428576765071778, guid: 1274b6c6bab1c714aa82c353e4fc3536, type: 3}
   - type: 1
+    bulletPrefab: {fileID: 2516911239539627670, guid: ce253016a635ce348b2a0c1a2fbdeb44, type: 3}
     beamPrefab: {fileID: 4258341324361696382, guid: 46b18078ebe1d564d90a15de681cfb0e, type: 3}
   - type: 2
+    bulletPrefab: {fileID: 2883180979609552342, guid: 9722d6dadb2ad9f4b962ecdfbfe04c37, type: 3}
     beamPrefab: {fileID: 6531319713837899222, guid: 3ecc26f6d4062be44b0a099e114ff00c, type: 3}
   - type: 3
+    bulletPrefab: {fileID: 1144309072755386233, guid: 37f3b2c1f111a214e8e10740b19c997f, type: 3}
     beamPrefab: {fileID: 4837343242800250203, guid: 2586299b974564f428d47ccd3c198026, type: 3}
   - type: 4
+    bulletPrefab: {fileID: 2268428576765071778, guid: e839e2ad5d7bf8147894cddb7903c7b3, type: 3}
     beamPrefab: {fileID: 2352610519853280536, guid: 5eeaa49a26f1bb7468d756408c7434a4, type: 3}
+  bulletSpeed: 20
   beamDuration: 0.5
+  postDamageDelay: 0.8

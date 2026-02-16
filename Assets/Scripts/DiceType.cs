@@ -2,11 +2,12 @@ using UnityEngine;
 
 public enum ElementType
 {
-    Normal,
+    Standard,
     Earth,
     Fire,
     Water,
-    Wind
+    Wind,
+    Fired
 }
 
 [System.Serializable]
@@ -16,8 +17,10 @@ public class DiceTypeData
     public GameObject auraPrefab;
     [Range(0f, 100f)]
     public float probability = 20f;
+    public bool useProbability = true;
 }
 
+[DefaultExecutionOrder(-10)]
 public class DiceType : MonoBehaviour
 {
     [Header("타입 데이터베이스")]
@@ -32,10 +35,15 @@ public class DiceType : MonoBehaviour
     [Header("Aura 오프셋")]
     public Vector3 auraOffset = Vector3.zero;
 
+    [Header("Fired 전용")]
+    public GameObject firedPrefab;
+    public Vector3 firedOffset = new Vector3(0f, -1.5f, 0f);
+
     private Role role;
     private Choice choice;
     private ElementType[] diceTypes;
     private GameObject[] auraObjects;
+    private GameObject[] firedOverlays;
     private bool wasRolling;
 
     void Start()
@@ -47,10 +55,11 @@ public class DiceType : MonoBehaviour
         {
             diceTypes = new ElementType[role.diceCount];
             auraObjects = new GameObject[role.diceCount];
+            firedOverlays = new GameObject[role.diceCount];
 
-            // 게임 시작 시 모든 주사위 Normal로 초기화, aura 없음
+            // 게임 시작 시 모든 주사위 Standard로 초기화, aura 없음
             for (int i = 0; i < diceTypes.Length; i++)
-                diceTypes[i] = ElementType.Normal;
+                diceTypes[i] = ElementType.Standard;
         }
     }
 
@@ -58,7 +67,7 @@ public class DiceType : MonoBehaviour
     {
         if (role == null) return;
 
-        // 롤 시작 시 모든 aura 즉시 제거 + 타입 Normal로 리셋
+        // 롤 시작 시 모든 aura 즉시 제거 + 타입 Standard로 리셋
         if (!wasRolling && role.IsRolling)
         {
             ClearAllAuras();
@@ -81,7 +90,7 @@ public class DiceType : MonoBehaviour
         for (int i = 0; i < diceTypes.Length; i++)
         {
             if (choice != null && choice.IsDiceLocked(i)) continue;
-            diceTypes[i] = ElementType.Normal;
+            diceTypes[i] = ElementType.Standard;
         }
     }
 
@@ -107,7 +116,7 @@ public class DiceType : MonoBehaviour
 
     ElementType GetRandomType()
     {
-        // 각 원소의 확률로 개별 판정, 해당 안 되면 Normal
+        // 각 원소의 확률로 개별 판정, 해당 안 되면 Standard
         // 100 기준으로 랜덤 판정
         float roll = Random.Range(0f, 100f);
         float cumulative = 0f;
@@ -119,18 +128,26 @@ public class DiceType : MonoBehaviour
                 return typeDatabase[i].type;
         }
 
-        return ElementType.Normal;
+        return ElementType.Standard;
     }
 
     void SpawnAura(int index)
     {
         if (role.DiceObjects == null || role.DiceObjects[index] == null) return;
 
+        if (diceTypes[index] == ElementType.Fired)
+        {
+            if (firedPrefab == null) return;
+            Vector3 pos = role.DiceObjects[index].transform.position + firedOffset;
+            auraObjects[index] = Instantiate(firedPrefab, pos, Quaternion.identity);
+            return;
+        }
+
         DiceTypeData data = GetTypeData(diceTypes[index]);
         if (data == null || data.auraPrefab == null) return;
 
-        Vector3 pos = role.DiceObjects[index].transform.position + auraOffset;
-        auraObjects[index] = Instantiate(data.auraPrefab, pos, Quaternion.identity);
+        Vector3 pos2 = role.DiceObjects[index].transform.position + auraOffset;
+        auraObjects[index] = Instantiate(data.auraPrefab, pos2, Quaternion.identity);
     }
 
     void ClearAllAuras()
@@ -151,6 +168,25 @@ public class DiceType : MonoBehaviour
             Destroy(auraObjects[index]);
             auraObjects[index] = null;
         }
+        ClearFiredOverlay(index);
+    }
+
+    public void SpawnFiredOverlay(int index)
+    {
+        if (firedPrefab == null || role.DiceObjects == null || role.DiceObjects[index] == null) return;
+        if (firedOverlays[index] != null) return; // 이미 있으면 스킵
+
+        Vector3 pos = role.DiceObjects[index].transform.position + firedOffset;
+        firedOverlays[index] = Instantiate(firedPrefab, pos, Quaternion.identity);
+    }
+
+    void ClearFiredOverlay(int index)
+    {
+        if (firedOverlays != null && firedOverlays[index] != null)
+        {
+            Destroy(firedOverlays[index]);
+            firedOverlays[index] = null;
+        }
     }
 
     void UpdateAuraPositions()
@@ -159,9 +195,20 @@ public class DiceType : MonoBehaviour
 
         for (int i = 0; i < auraObjects.Length; i++)
         {
-            if (auraObjects[i] == null || role.DiceObjects[i] == null) continue;
-            auraObjects[i].transform.position = role.DiceObjects[i].transform.position + auraOffset;
-            auraObjects[i].transform.rotation = Quaternion.identity;
+            if (role.DiceObjects[i] == null) continue;
+
+            if (auraObjects[i] != null)
+            {
+                Vector3 offset = (diceTypes[i] == ElementType.Fired) ? firedOffset : auraOffset;
+                auraObjects[i].transform.position = role.DiceObjects[i].transform.position + offset;
+                auraObjects[i].transform.rotation = Quaternion.identity;
+            }
+
+            if (firedOverlays != null && firedOverlays[i] != null)
+            {
+                firedOverlays[i].transform.position = role.DiceObjects[i].transform.position + firedOffset;
+                firedOverlays[i].transform.rotation = Quaternion.identity;
+            }
         }
     }
 
@@ -175,13 +222,18 @@ public class DiceType : MonoBehaviour
         return null;
     }
 
-    /// <summary>
-    /// 특정 주사위의 현재 타입 반환
-    /// </summary>
     public ElementType GetDiceType(int index)
     {
         if (diceTypes == null || index < 0 || index >= diceTypes.Length)
-            return ElementType.Normal;
+            return ElementType.Standard;
         return diceTypes[index];
+    }
+
+    public void SetDiceType(int index, ElementType newType)
+    {
+        if (diceTypes == null || index < 0 || index >= diceTypes.Length) return;
+        ClearAura(index);
+        diceTypes[index] = newType;
+        SpawnAura(index);
     }
 }

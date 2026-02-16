@@ -163,6 +163,7 @@ Material:
     - _Distort_Rotate: 0
     - _Distort_Strength: 0.1
     - _DstBlend: 10
+    - _DstBlendAlpha: 10
     - _EnvironmentReflections: 1
     - _Fresnel_AddOrMultiply: 1
     - _GlossMapScale: 0
@@ -190,6 +191,7 @@ Material:
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 5
+    - _SrcBlendAlpha: 1
     - _Surface: 1
     - _SwitchColors: 0
     - _UseFresnel: 0
@@ -203,8 +205,8 @@ Material:
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Color_1: {r: 1.8938819, g: 1.8214383, b: 1.8214383, a: 0}
-    - _Color_2: {r: 1, g: 1, b: 1, a: 0}
+    - _Color_1: {r: 1.300021, g: 2.208946, b: 2.5284812, a: 0}
+    - _Color_2: {r: 0.2028302, g: 0.7673695, b: 1, a: 0}
     - _Color_Scroll: {r: 2, g: 0, b: 0, a: 0}
     - _Color_Tex_Remap: {r: 0, g: 1, b: 0, a: 0}
     - _Disolve_Remap: {r: 0, g: 1, b: 0, a: 0}

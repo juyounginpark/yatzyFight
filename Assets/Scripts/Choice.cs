@@ -1,4 +1,6 @@
 using UnityEngine;
+using TMPro;
+using UnityEngine.UI;
 
 public class Choice : MonoBehaviour
 {
@@ -13,6 +15,12 @@ public class Choice : MonoBehaviour
     [Header("Select 설정 (Dice 외)")]
     public Material selectMaterial;
     public float selectScale = 1.3f;
+
+    [Header("호버 툴팁")]
+    public TMP_FontAsset tooltipFont;
+    public int tooltipFontSize = 20;
+    public Color tooltipColor = Color.yellow;
+    public Vector3 tooltipWorldOffset = new Vector3(0, 1.2f, 0);
 
     [Header("레이어")]
     public LayerMask selectableLayer;
@@ -30,6 +38,13 @@ public class Choice : MonoBehaviour
     private GameObject selectedObject;
     private GameObject selectClone;
 
+    // 호버 툴팁
+    private Canvas tooltipCanvas;
+    private GameObject tooltipObj;
+    private TextMeshProUGUI tooltipTMP;
+    private RectTransform tooltipRT;
+    private int currentHoverDiceIndex = -1;
+
     void Start()
     {
         mainCam = Camera.main;
@@ -37,6 +52,7 @@ public class Choice : MonoBehaviour
         role = FindObjectOfType<Role>();
         diceUI = FindObjectOfType<DiceUI>();
         attack = FindObjectOfType<Attack>();
+        retryUI = FindObjectOfType<RetryUI>();
         if (role != null)
         {
             int count = role.diceCount;
@@ -47,17 +63,27 @@ public class Choice : MonoBehaviour
 
     private DiceUI diceUI;
     private Attack attack;
+    private RetryUI retryUI;
 
     void Update()
     {
-        // 최초 롤 전 또는 롤 중에는 호버/클릭 전부 차단
-        if (role != null && (role.IsRolling || !role.HasRolled))
+        // 롤 중에는 호버/클릭 전부 차단
+        if (role != null && role.IsRolling)
         {
             if (currentHoverObject != null)
             {
                 DestroyChoice();
+                DestroyTooltip();
                 currentHoverObject = null;
+                currentHoverDiceIndex = -1;
             }
+            return;
+        }
+
+        // 최초 롤 전에는 우클릭(롤)만 허용
+        if (role != null && !role.HasRolled)
+        {
+            HandleAttack();
             return;
         }
 
@@ -87,7 +113,9 @@ public class Choice : MonoBehaviour
             if (currentHoverObject != null)
             {
                 DestroyChoice();
+                DestroyTooltip();
                 currentHoverObject = null;
+                currentHoverDiceIndex = -1;
             }
             return;
         }
@@ -95,19 +123,41 @@ public class Choice : MonoBehaviour
         if (currentHoverObject == target) return;
 
         DestroyChoice();
+        DestroyTooltip();
         currentHoverObject = target;
+        currentHoverDiceIndex = -1;
 
-        // Dice lock된 상태면 호버 효과 안 띄움
+        // Dice lock된 상태면 호버 효과 안 띄움 (but 툴팁은 표시)
         if (target.CompareTag("Dice"))
         {
             int diceIndex = GetDiceIndex(target);
-            if (diceIndex >= 0 && lockedDice[diceIndex]) return;
+            if (diceIndex >= 0 && lockedDice[diceIndex])
+            {
+                // lock된 다이스도 기여도 툴팁은 표시
+                if (diceUI != null && role != null && role.HasRolled)
+                {
+                    currentHoverDiceIndex = diceIndex;
+                    ShowTooltip(diceIndex);
+                }
+                return;
+            }
         }
 
         // 이미 select된 개체면 호버 효과 안 띄움
         if (selectedObject == target) return;
 
         CreateClone(target, choiceMaterial, choiceScale, ref currentChoice);
+
+        // 다이스 호버 시 기여도 툴팁 표시
+        if (target.CompareTag("Dice") && diceUI != null && role != null && role.HasRolled)
+        {
+            int di = GetDiceIndex(target);
+            if (di >= 0)
+            {
+                currentHoverDiceIndex = di;
+                ShowTooltip(di);
+            }
+        }
     }
 
     void HandleClick()
@@ -177,10 +227,18 @@ public class Choice : MonoBehaviour
     void HandleAttack()
     {
         if (!Input.GetMouseButtonDown(1)) return;
-        if (role == null || !role.HasRolled || role.IsRolling) return;
-        if (attack != null && attack.IsAttacking) return;
+        if (role == null || role.IsRolling) return;
 
-        if (selectedObject != null && diceUI != null && diceUI.LastScore > 0)
+        // 최초 롤 전에는 무조건 롤 허용
+        if (!role.HasRolled)
+        {
+            role.RollAllDice();
+            return;
+        }
+
+        if (attack != null && attack.IsAttacking) return;
+        
+        if (role.HasRolled && selectedObject != null && diceUI != null && diceUI.LastScore > 0)
         {
             // select된 개체 있으면: Attack으로 위임 (빔 + 데미지 + lock해제 + 롤)
             if (attack != null)
@@ -188,9 +246,14 @@ public class Choice : MonoBehaviour
         }
         else
         {
-            // 빈 곳: 일반 롤
+            // 리롤: 남은 횟수 확인
             if (!role.IsRolling)
+            {
+                if (retryUI != null && !retryUI.ConsumeRetry())
+                    return; // 리롤 횟수 소진
+
                 role.RollAllDice();
+            }
         }
     }
 
@@ -269,6 +332,9 @@ public class Choice : MonoBehaviour
             selectClone.transform.position = selectedObject.transform.position;
             selectClone.transform.rotation = selectedObject.transform.rotation;
         }
+
+        // 툴팁 위치 갱신
+        UpdateTooltipPosition();
     }
 
     void DestroyChoice()
@@ -302,6 +368,74 @@ public class Choice : MonoBehaviour
                 return num - 1;
         }
         return -1;
+    }
+
+    // ===== 호버 툴팁 =====
+
+    void ShowTooltip(int diceIndex)
+    {
+        DestroyTooltip();
+
+        if (tooltipCanvas == null)
+        {
+            GameObject existing = GameObject.Find("HPCanvas");
+            if (existing != null)
+                tooltipCanvas = existing.GetComponent<Canvas>();
+            else
+            {
+                GameObject canvasObj = new GameObject("HPCanvas");
+                tooltipCanvas = canvasObj.AddComponent<Canvas>();
+                tooltipCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                tooltipCanvas.sortingOrder = 100;
+                canvasObj.AddComponent<CanvasScaler>();
+                canvasObj.AddComponent<GraphicRaycaster>();
+            }
+        }
+
+        int contribution = diceUI.GetDiceContribution(diceIndex);
+
+        tooltipObj = new GameObject("DiceTooltip");
+        tooltipObj.transform.SetParent(tooltipCanvas.transform, false);
+
+        tooltipRT = tooltipObj.AddComponent<RectTransform>();
+        tooltipRT.sizeDelta = new Vector2(120f, 40f);
+
+        tooltipTMP = tooltipObj.AddComponent<TextMeshProUGUI>();
+        if (tooltipFont != null)
+            tooltipTMP.font = tooltipFont;
+        tooltipTMP.text = "DMG " + contribution;
+        tooltipTMP.fontSize = tooltipFontSize;
+        tooltipTMP.color = tooltipColor;
+        tooltipTMP.alignment = TextAlignmentOptions.Center;
+        tooltipTMP.raycastTarget = false;
+
+        UpdateTooltipPosition();
+    }
+
+    void UpdateTooltipPosition()
+    {
+        if (tooltipObj == null || mainCam == null) return;
+        if (currentHoverDiceIndex < 0 || role == null || role.DiceObjects == null) return;
+
+        GameObject diceObj = role.DiceObjects[currentHoverDiceIndex];
+        if (diceObj == null) return;
+
+        Vector3 worldPos = diceObj.transform.position + tooltipWorldOffset;
+        Vector3 screenPos = mainCam.WorldToScreenPoint(worldPos);
+
+        if (screenPos.z > 0)
+            tooltipRT.position = screenPos;
+    }
+
+    void DestroyTooltip()
+    {
+        if (tooltipObj != null)
+        {
+            Destroy(tooltipObj);
+            tooltipObj = null;
+            tooltipTMP = null;
+            tooltipRT = null;
+        }
     }
 
     void SetLayerRecursive(GameObject obj, int layer)
