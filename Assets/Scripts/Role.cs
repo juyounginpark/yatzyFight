@@ -64,7 +64,7 @@ public class Role : MonoBehaviour
     // 3 2 4 5
     //    6
     // 2가 정면(카메라 방향) 기준 전개도 매핑
-    private static readonly Vector3[] faceRotations = new Vector3[]
+    public static readonly Vector3[] faceRotations = new Vector3[]
     {
         new Vector3(-90, 0, 0),     // 1번 면 (위 → 정면)
         new Vector3(0, 0, 0),       // 2번 면 (정면 그대로)

@@ -30,6 +30,7 @@ public class Attack : MonoBehaviour
     private DiceUI diceUI;
     private Choice choice;
     private RetryUI retryUI;
+    private GameFlow gameFlow;
     private bool isAttacking;
 
     public bool IsAttacking => isAttacking;
@@ -41,6 +42,7 @@ public class Attack : MonoBehaviour
         diceUI = FindObjectOfType<DiceUI>();
         choice = FindObjectOfType<Choice>();
         retryUI = FindObjectOfType<RetryUI>();
+        gameFlow = FindObjectOfType<GameFlow>();
     }
 
     public void Execute(GameObject target, int score)
@@ -111,17 +113,11 @@ public class Attack : MonoBehaviour
 
         yield return new WaitForSeconds(postDamageDelay);
 
-        // 리롤 횟수 초기화
-        if (retryUI != null)
-            retryUI.ResetRetries();
-
-        if (choice != null)
-            choice.UnlockAll();
-
-        if (role != null && !role.IsRolling)
-            role.RollAllDice();
-
         isAttacking = false;
+
+        // GameFlow에 플레이어 공격 완료 알림 → 적 턴 시작
+        if (gameFlow != null)
+            gameFlow.OnPlayerAttackCompleted();
     }
 
     void FireVfx(GameObject prefab, Vector3 origin, Vector3 targetPos, float duration, List<GameObject> spawned)

@@ -53,6 +53,7 @@ public class Choice : MonoBehaviour
         diceUI = FindObjectOfType<DiceUI>();
         attack = FindObjectOfType<Attack>();
         retryUI = FindObjectOfType<RetryUI>();
+        gameFlow = FindObjectOfType<GameFlow>();
         if (role != null)
         {
             int count = role.diceCount;
@@ -64,9 +65,23 @@ public class Choice : MonoBehaviour
     private DiceUI diceUI;
     private Attack attack;
     private RetryUI retryUI;
+    private GameFlow gameFlow;
 
     void Update()
     {
+        // 적 턴에는 모든 입력 차단
+        if (gameFlow != null && !gameFlow.CanPlayerAct)
+        {
+            if (currentHoverObject != null)
+            {
+                DestroyChoice();
+                DestroyTooltip();
+                currentHoverObject = null;
+                currentHoverDiceIndex = -1;
+            }
+            return;
+        }
+
         // 롤 중에는 호버/클릭 전부 차단
         if (role != null && role.IsRolling)
         {
