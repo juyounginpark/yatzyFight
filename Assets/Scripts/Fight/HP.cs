@@ -29,11 +29,17 @@ public class HP : MonoBehaviour
     public float Ratio => (float)currentHP / maxHP;
     public bool IsDead => currentHP <= 0;
 
-    void Start()
+    void Awake()
     {
         currentHP = maxHP;
+    }
+
+    void Start()
+    {
         originalPosition = transform.position;
         anim = GetComponentInChildren<Animator>();
+        if (anim == null)
+            anim = GetComponentInParent<Animator>();
         CacheRenderers();
     }
 
@@ -77,10 +83,10 @@ public class HP : MonoBehaviour
 
         if (currentHP <= 0)
         {
-            if (onDeath != null)
-                onDeath.Invoke();
-            else
-                Destroy(gameObject);
+            if (anim != null)
+                anim.SetTrigger("Dead");
+
+            onDeath.Invoke();
         }
     }
 

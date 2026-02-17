@@ -25,6 +25,7 @@ public class EnemyAttack : MonoBehaviour
     public float idleSpeedMax = 1.8f;
 
     [Header("공격 VFX")]
+    public bool useProjectile = true;
     public float projectileSpeed = 15f;
     public float dotFireDelay = 0.08f;
 
@@ -67,6 +68,8 @@ public class EnemyAttack : MonoBehaviour
         diceUI = FindObjectOfType<DiceUI>();
         attack = FindObjectOfType<Attack>();
         anim = GetComponentInChildren<Animator>();
+        if (anim == null)
+            anim = GetComponentInParent<Animator>();
 
         if (gameFlow != null)
             gameFlow.RegisterEnemy(this);
@@ -142,8 +145,22 @@ public class EnemyAttack : MonoBehaviour
         if (anim != null)
             anim.SetTrigger("Attack");
 
+        // 애니메이션 끝나기 0.2초 전까지 대기
+        float animWait = 0f;
+        if (anim != null)
+        {
+            yield return null;
+            while (anim != null && anim.IsInTransition(0))
+                yield return null;
+            if (anim != null)
+                animWait = Mathf.Max(0f, anim.GetCurrentAnimatorStateInfo(0).length - 0.2f);
+        }
+        if (animWait > 0f)
+            yield return new WaitForSeconds(animWait);
+
         // 5. VFX 발사 (카메라 하단으로)
-        yield return FireProjectiles();
+        if (useProjectile)
+            yield return FireProjectiles();
 
         // 6. 데미지 적용 (GameFlow.playerHP)
         if (gameFlow != null && gameFlow.playerHP != null)
@@ -577,7 +594,27 @@ public class EnemyAttack : MonoBehaviour
             gameFlow.UnregisterEnemy(this);
 
         DestroyDice();
-        Destroy(gameObject);
+        StartCoroutine(DeathSequence());
+    }
+
+    IEnumerator DeathSequence()
+    {
+        // Dead 애니메이션 진입 대기
+        if (anim != null)
+        {
+            yield return null;
+            while (anim != null && anim.IsInTransition(0))
+                yield return null;
+
+            // 애니메이션 재생 완료 대기
+            if (anim != null)
+            {
+                float deathAnimLength = anim.GetCurrentAnimatorStateInfo(0).length;
+                yield return new WaitForSeconds(deathAnimLength);
+            }
+        }
+
+        Destroy(transform.root.gameObject);
     }
 
     void SetLayerRecursive(GameObject obj, int layer)

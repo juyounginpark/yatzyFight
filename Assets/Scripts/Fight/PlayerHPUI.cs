@@ -23,14 +23,19 @@ public class PlayerHPUI : MonoBehaviour
     public Color dmgTextColor = Color.red;
 
     [Header("피격 UI 오버레이")]
-    public GameObject damagedOverlay;
-    public float damagedOverlayDuration = 0.4f;
+    public Color damagedOverlayColor = new Color(1f, 0f, 0f, 0.3f);
+    public float damagedOverlayDuration = 0.5f;
+
+    [Header("피격 카메라 쉐이크")]
+    public float cameraShakeDuration = 0.25f;
+    public float cameraShakeIntensity = 0.15f;
 
     private HP hp;
     private Canvas canvas;
     private RectTransform barRoot;
     private RectTransform fillRect;
     private Image fillImage;
+    private Image damagedOverlayImage;
     private int prevHP;
 
     void Start()
@@ -42,9 +47,6 @@ public class PlayerHPUI : MonoBehaviour
         GameFlow gameFlow = FindObjectOfType<GameFlow>();
         if (gameFlow != null && gameFlow.playerHP == null)
             gameFlow.playerHP = hp;
-
-        if (damagedOverlay != null)
-            damagedOverlay.SetActive(false);
 
         CreateUI();
     }
@@ -98,6 +100,18 @@ public class PlayerHPUI : MonoBehaviour
         fillRect.sizeDelta = new Vector2(barSize.x, 0f);
         fillImage = fillObj.AddComponent<Image>();
         fillImage.color = highColor;
+
+        // 피격 오버레이 (전체 화면)
+        GameObject overlayObj = new GameObject("DamagedOverlay");
+        overlayObj.transform.SetParent(canvas.transform, false);
+        RectTransform overlayRect = overlayObj.AddComponent<RectTransform>();
+        overlayRect.anchorMin = Vector2.zero;
+        overlayRect.anchorMax = Vector2.one;
+        overlayRect.offsetMin = Vector2.zero;
+        overlayRect.offsetMax = Vector2.zero;
+        damagedOverlayImage = overlayObj.AddComponent<Image>();
+        damagedOverlayImage.color = Color.clear;
+        damagedOverlayImage.raycastTarget = false;
     }
 
     void OnDamaged()
@@ -107,22 +121,62 @@ public class PlayerHPUI : MonoBehaviour
         {
             SpawnDamageText(damage);
             ShowDamagedOverlay();
+            ShakeCamera();
         }
         prevHP = hp.CurrentHP;
     }
 
     void ShowDamagedOverlay()
     {
-        if (damagedOverlay == null) return;
+        if (damagedOverlayImage == null) return;
         StopCoroutine("AnimateDamagedOverlay");
         StartCoroutine("AnimateDamagedOverlay");
     }
 
     System.Collections.IEnumerator AnimateDamagedOverlay()
     {
-        damagedOverlay.SetActive(true);
-        yield return new WaitForSeconds(damagedOverlayDuration);
-        damagedOverlay.SetActive(false);
+        // 오버레이 페이드
+        damagedOverlayImage.color = damagedOverlayColor;
+        float elapsed = 0f;
+        while (elapsed < damagedOverlayDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / damagedOverlayDuration;
+            Color c = damagedOverlayColor;
+            c.a = damagedOverlayColor.a * (1f - t * t);
+            damagedOverlayImage.color = c;
+            yield return null;
+        }
+        damagedOverlayImage.color = Color.clear;
+    }
+
+    void ShakeCamera()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) return;
+        StopCoroutine("AnimateCameraShake");
+        StartCoroutine("AnimateCameraShake");
+    }
+
+    System.Collections.IEnumerator AnimateCameraShake()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) yield break;
+
+        Vector3 originalPos = cam.transform.position;
+        float elapsed = 0f;
+
+        while (elapsed < cameraShakeDuration)
+        {
+            elapsed += Time.deltaTime;
+            float strength = cameraShakeIntensity * (1f - elapsed / cameraShakeDuration);
+            Vector3 offset = Random.insideUnitSphere * strength;
+            offset.z = 0f;
+            cam.transform.position = originalPos + offset;
+            yield return null;
+        }
+
+        cam.transform.position = originalPos;
     }
 
     void Update()
@@ -187,5 +241,7 @@ public class PlayerHPUI : MonoBehaviour
     {
         if (barRoot != null)
             Destroy(barRoot.gameObject);
+        if (damagedOverlayImage != null)
+            Destroy(damagedOverlayImage.gameObject);
     }
 }

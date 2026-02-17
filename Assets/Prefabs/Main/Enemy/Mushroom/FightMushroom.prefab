@@ -311,6 +311,7 @@ MonoBehaviour:
   idleAmplitude: 0.15
   idleSpeedMin: 1
   idleSpeedMax: 1.8
+  useProjectile: 0
   projectileSpeed: 15
   dotFireDelay: 0.08
   preRollDelay: 0.5
