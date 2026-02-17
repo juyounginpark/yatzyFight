@@ -158,9 +158,10 @@ public class Role : MonoBehaviour
 
         ClearPreview();
 
+        float half = (diceCount - 1) * 0.5f;
         for (int i = 0; i < diceCount; i++)
         {
-            float x = (i - 2) * spacing;
+            float x = (i - half) * spacing;
             Vector3 position = transform.position + new Vector3(x, 0, 0);
 
 #if UNITY_EDITOR
@@ -193,9 +194,10 @@ public class Role : MonoBehaviour
         idleOffset = new float[diceCount];
         idleCurrentY = new float[diceCount];
 
+        float half = (diceCount - 1) * 0.5f;
         for (int i = 0; i < diceCount; i++)
         {
-            float x = (i - 2) * spacing;
+            float x = (i - half) * spacing;
             Vector3 position = transform.position + new Vector3(x, 0, 0);
             diceObjects[i] = Instantiate(dicePrefab, position, Quaternion.identity, transform);
             diceObjects[i].name = "Dice_" + (i + 1);

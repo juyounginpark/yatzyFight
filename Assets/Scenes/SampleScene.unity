@@ -721,7 +721,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Role
   dicePrefab: {fileID: 5662041024626242717, guid: 974aa5c502081ba4683409c4e15ca6f4, type: 3}
-  diceCount: 5
+  diceCount: 12
   spacing: 2.5
   rollDuration: 0.5
   rollSpeed: 5000
@@ -1506,7 +1506,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '? ? ?
+  m_text: '? ? ? ? ? ? ? ? ? ? ? ?
 
     score : ?'
   m_isRightToLeft: 0
