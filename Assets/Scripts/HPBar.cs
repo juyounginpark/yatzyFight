@@ -27,6 +27,7 @@ public class HPBar : MonoBehaviour
     private RectTransform barRoot;
     private RectTransform fillRect;
     private Image fillImage;
+    private System.Collections.Generic.List<GameObject> activeDmgTexts = new System.Collections.Generic.List<GameObject>();
 
     void Start()
     {
@@ -153,6 +154,7 @@ public class HPBar : MonoBehaviour
         tmp.raycastTarget = false;
         rt.sizeDelta = new Vector2(200f, 50f);
 
+        activeDmgTexts.Add(textObj);
         StartCoroutine(AnimateDamageText(textObj, rt, tmp));
     }
 
@@ -175,6 +177,7 @@ public class HPBar : MonoBehaviour
             yield return null;
         }
 
+        activeDmgTexts.Remove(obj);
         Destroy(obj);
     }
 
@@ -182,5 +185,12 @@ public class HPBar : MonoBehaviour
     {
         if (barRoot != null)
             Destroy(barRoot.gameObject);
+
+        // 남아있는 데미지 텍스트 전부 정리
+        foreach (var obj in activeDmgTexts)
+        {
+            if (obj != null) Destroy(obj);
+        }
+        activeDmgTexts.Clear();
     }
 }
