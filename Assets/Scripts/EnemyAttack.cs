@@ -420,14 +420,14 @@ public class EnemyAttack : MonoBehaviour
             }
         }
 
-        // Yahtzee (전부 같은 수, 주사위 수만큼)
-        if (n >= 2)
+        // All of a Kind (4개 이상부터)
+        if (n >= 4)
         {
             for (int v = 1; v <= 6; v++)
             {
-                if (counts[v] == n)
+                if (counts[v] >= n)
                 {
-                    int s = (n >= 5) ? 50 : total;
+                    int s = 10 * n;
                     if (s > best) best = s;
                 }
             }
@@ -647,15 +647,15 @@ public class EnemyAttack : MonoBehaviour
             }
         }
 
-        // Yahtzee
-        if (n >= 2)
+        // All of a Kind (4개 이상부터)
+        if (n >= 4)
         {
             for (int v = 1; v <= 6; v++)
             {
-                if (counts[v] == n)
+                if (counts[v] >= n)
                 {
-                    int s = (n >= 5) ? 50 : total;
-                    if (s > best) { best = s; bestName = (n >= 5) ? "Yahtzee" : "All Same"; }
+                    int s = 10 * n;
+                    if (s > best) { best = s; bestName = "All of a Kind"; }
                 }
             }
         }

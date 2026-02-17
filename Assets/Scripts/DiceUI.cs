@@ -270,6 +270,7 @@ public class DiceUI : MonoBehaviour
         int bestPriority = -1;
 
         // ── 야치 조합 (priority 0~9) ──
+        // 주사위 개수에 맞게 동적 적용
 
         string[] upperNames = { "", "Ace", "Two", "Three", "Four", "Five", "Six" };
         int upperTotal = 0;
@@ -280,34 +281,63 @@ public class DiceUI : MonoBehaviour
             TrySet(s, upperNames[v], 0, ref bestScore, ref bestName, ref bestPriority);
         }
 
-        if (upperTotal >= 63)
+        // Upper Bonus 기준: 주사위 수 비례 (5개=63, 3개=38, 7개=89 등)
+        int upperThreshold = Mathf.CeilToInt(n * 12.6f);
+        if (upperTotal >= upperThreshold)
             TrySet(upperTotal + 35, "Upper Bonus", 1, ref bestScore, ref bestName, ref bestPriority);
 
-        for (int v = 6; v >= 1; v--)
+        if (n >= 2)
         {
-            if (counts[v] >= 2) { TrySet(v * 2, "One Pair", 2, ref bestScore, ref bestName, ref bestPriority); break; }
+            for (int v = 6; v >= 1; v--)
+            {
+                if (counts[v] >= 2) { TrySet(v * 2, "One Pair", 2, ref bestScore, ref bestName, ref bestPriority); break; }
+            }
         }
 
+        if (n >= 4)
         {
             int pairCount = 0, pairSum = 0;
             for (int v = 6; v >= 1; v--) { if (counts[v] >= 2) { pairCount++; pairSum += v * 2; } }
             if (pairCount >= 2) TrySet(pairSum, "Two Pairs", 3, ref bestScore, ref bestName, ref bestPriority);
         }
 
-        for (int v = 1; v <= 6; v++) { if (counts[v] >= 3) TrySet(total, "Three of a Kind", 4, ref bestScore, ref bestName, ref bestPriority); }
-        for (int v = 1; v <= 6; v++) { if (counts[v] >= 4) TrySet(total, "Four of a Kind", 5, ref bestScore, ref bestName, ref bestPriority); }
-        if (IsFullHouse(counts)) TrySet(25, "Full House", 6, ref bestScore, ref bestName, ref bestPriority);
-        if (IsSmallStraight(counts)) TrySet(30, "Small Straight", 7, ref bestScore, ref bestName, ref bestPriority);
-        if (IsLargeStraight(counts)) TrySet(40, "Large Straight", 8, ref bestScore, ref bestName, ref bestPriority);
-
-        for (int v = 1; v <= 6; v++)
+        if (n >= 3)
         {
-            if (counts[v] == 5)
+            for (int v = 1; v <= 6; v++) { if (counts[v] >= 3) TrySet(total, "Three of a Kind", 4, ref bestScore, ref bestName, ref bestPriority); }
+        }
+
+        if (n >= 4)
+        {
+            for (int v = 1; v <= 6; v++) { if (counts[v] >= 4) TrySet(total, "Four of a Kind", 5, ref bestScore, ref bestName, ref bestPriority); }
+        }
+
+        if (n >= 5)
+        {
+            if (IsFullHouse(counts)) TrySet(25, "Full House", 6, ref bestScore, ref bestName, ref bestPriority);
+        }
+
+        if (n >= 4)
+        {
+            if (IsSmallStraight(counts)) TrySet(30, "Small Straight", 7, ref bestScore, ref bestName, ref bestPriority);
+        }
+
+        if (n >= 5)
+        {
+            if (IsLargeStraight(counts)) TrySet(40, "Large Straight", 8, ref bestScore, ref bestName, ref bestPriority);
+        }
+
+        // All of a Kind: 모든 주사위가 같은 값 (4개 이상부터)
+        if (n >= 4)
+        {
+            for (int v = 1; v <= 6; v++)
             {
-                int s = hasYahtzee ? 150 : 50;
-                string nm = hasYahtzee ? "Five of a Kind+" : "Five of a Kind";
-                TrySet(s, nm, 9, ref bestScore, ref bestName, ref bestPriority);
-                hasYahtzee = true;
+                if (counts[v] >= n)
+                {
+                    int s = hasYahtzee ? 50 + n * 20 : 10 * n;
+                    string nm = hasYahtzee ? "All of a Kind+" : "All of a Kind";
+                    TrySet(s, nm, 9, ref bestScore, ref bestName, ref bestPriority);
+                    hasYahtzee = true;
+                }
             }
         }
 
