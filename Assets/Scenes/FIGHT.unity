@@ -1541,7 +1541,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '? ? ? ? ?
+  m_text: '? ? ? ? ? ? ? ? ? ? ? ?
 
     score : ?'
   m_isRightToLeft: 0
