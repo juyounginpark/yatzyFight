@@ -443,14 +443,14 @@ CapsuleCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.22464722
-  m_Height: 1
+  m_Radius: 0.6895012
+  m_Height: 1.3790025
   m_Direction: 1
-  m_Center: {x: -0.018067164, y: 0.4382434, z: 0}
+  m_Center: {x: 0.029906904, y: 0.4382434, z: 0}
 --- !u!54 &6557493051333367162
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -495,6 +495,7 @@ MonoBehaviour:
   moveSpeed: 3
   returnSpeed: 2
   rotSpeed: 5
+  fightPrefab: {fileID: 8405131764517475841, guid: 0b590b594e8b40247b8bb2349438c7c4, type: 3}
 --- !u!1 &2741378339658433854
 GameObject:
   m_ObjectHideFlags: 0

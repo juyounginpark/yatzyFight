@@ -12,7 +12,7 @@ public enum TurnPhase
 public class GameFlow : MonoBehaviour
 {
     [Header("참조")]
-    public GameObject player;
+    public HP playerHP;
 
     [Header("타이밍")]
     public float enemyPhaseDelay = 0.5f;
@@ -64,7 +64,7 @@ public class GameFlow : MonoBehaviour
         foreach (var enemy in alive)
         {
             if (enemy == null || enemy.IsDead) continue;
-            yield return enemy.ExecuteAttack(player);
+            yield return enemy.ExecuteAttack();
         }
 
         StartPlayerPhase();

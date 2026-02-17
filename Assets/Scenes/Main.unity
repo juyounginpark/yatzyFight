@@ -10453,6 +10453,10 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: 7613a42db4ff4c34ba7234fd9c3aeb63, type: 2}
+    - target: {fileID: 9197612324908986327, guid: 58d009f2315502c4b8db9a6fecee5fa7, type: 3}
+      propertyPath: fightPrefab
+      value: 
+      objectReference: {fileID: 8405131764517475841, guid: 0b590b594e8b40247b8bb2349438c7c4, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class EnemyFollow : MonoBehaviour
 {
@@ -13,15 +14,20 @@ public class EnemyFollow : MonoBehaviour
     [Header("회전")]
     public float rotSpeed = 5f;
 
+    [Header("전투")]
+    public GameObject fightPrefab;
+
     private Transform player;
     private Vector3 homePos;
     private Quaternion homeRot;
     private bool chasing;
+    private static bool loading;
 
     void Start()
     {
         homePos = transform.position;
         homeRot = transform.rotation;
+        loading = false;
 
         GameObject go = GameObject.FindGameObjectWithTag("Player");
         if (go != null)
@@ -34,7 +40,6 @@ public class EnemyFollow : MonoBehaviour
 
         float playerDist = Vector3.Distance(homePos, player.position);
 
-        // 플레이어가 원래 좌표 기준 감지 범위 안에 있으면 추적
         if (playerDist <= detectRange)
         {
             chasing = true;
@@ -45,6 +50,18 @@ public class EnemyFollow : MonoBehaviour
             chasing = false;
             ReturnHome();
         }
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (loading) return;
+        if (!other.CompareTag("Player")) return;
+        if (fightPrefab == null) return;
+
+        loading = true;
+        FightSetupData.enemyPrefabs = new GameObject[] { fightPrefab };
+        FightSetupData.enemyScales = new Vector3[] { transform.localScale };
+        SceneManager.LoadScene("FIGHT");
     }
 
     void ChasePlayer()
@@ -67,7 +84,6 @@ public class EnemyFollow : MonoBehaviour
         Vector3 dir = homePos - transform.position;
         dir.y = 0f;
 
-        // 거의 도착했으면 정지
         if (dir.sqrMagnitude < 0.05f)
         {
             transform.position = homePos;
@@ -82,7 +98,6 @@ public class EnemyFollow : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
-        // 항상 원래 좌표 기준으로 표시
         Vector3 center = Application.isPlaying ? homePos : transform.position;
 
         Gizmos.color = Color.yellow;

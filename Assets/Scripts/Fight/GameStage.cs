@@ -1,48 +1,31 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
 
-[System.Serializable]
-public class EnemySpawnData
-{
-    public GameObject enemyPrefab;
-    public Transform spawnPoint;
-}
-
-[System.Serializable]
-public class StageData
-{
-    public string stageName;
-    public EnemySpawnData[] enemies;
-}
-
 public class GameStage : MonoBehaviour
 {
-    [Header("스테이지 데이터베이스")]
-    public StageData[] stages;
+    [Header("스폰 설정")]
+    public Transform spawnPoint;
+    public float enemySpacing = 2f;
 
-    [Header("스테이지 전환")]
-    public float nextStageDelay = 1.5f;
+    [Header("전투 종료")]
+    public float clearDelay = 1.5f;
 
-    private int currentStageIndex = -1;
     private List<GameObject> spawnedEnemies = new List<GameObject>();
     private GameFlow gameFlow;
     private bool checkingClear;
 
-    public int CurrentStageIndex => currentStageIndex;
-    public int TotalStages => stages != null ? stages.Length : 0;
-
     void Start()
     {
         gameFlow = FindObjectOfType<GameFlow>();
-        StartNextStage();
+        StartCoroutine(SpawnFromSetupData());
     }
 
     void Update()
     {
         if (!checkingClear) return;
 
-        // 모든 적이 죽었는지 체크
         bool allDead = true;
         for (int i = 0; i < spawnedEnemies.Count; i++)
         {
@@ -60,56 +43,60 @@ public class GameStage : MonoBehaviour
         }
     }
 
-    void StartNextStage()
+    IEnumerator SpawnFromSetupData()
     {
-        currentStageIndex++;
-
-        if (stages == null || currentStageIndex >= stages.Length)
-        {
-            // 모든 스테이지 클리어
-            OnAllStagesClear();
-            return;
-        }
-
-        StartCoroutine(SpawnStage(stages[currentStageIndex]));
-    }
-
-    IEnumerator SpawnStage(StageData stage)
-    {
-        // 기존 적 정리
         ClearSpawnedEnemies();
 
         yield return new WaitForSeconds(0.5f);
 
-        // 적 스폰
-        for (int i = 0; i < stage.enemies.Length; i++)
+        GameObject[] prefabs = FightSetupData.enemyPrefabs;
+        if (prefabs == null || prefabs.Length == 0)
         {
-            EnemySpawnData data = stage.enemies[i];
-            if (data.enemyPrefab == null) continue;
+            Debug.LogWarning("[GameStage] FightSetupData에 적 데이터가 없음!");
+            yield break;
+        }
 
-            Vector3 pos = data.spawnPoint != null ? data.spawnPoint.position : Vector3.zero;
-            GameObject enemy = Instantiate(data.enemyPrefab, pos, Quaternion.identity);
+        Vector3 center = spawnPoint != null ? spawnPoint.position : Vector3.zero;
+        int count = prefabs.Length;
+
+        // 카메라 방향으로 회전
+        Vector3 camPos = Camera.main != null ? Camera.main.transform.position : Vector3.zero;
+
+        for (int i = 0; i < count; i++)
+        {
+            if (prefabs[i] == null) continue;
+
+            float x = (i - (count - 1) / 2f) * enemySpacing;
+            Vector3 pos = center + new Vector3(x, 0f, 0f);
+
+            // 카메라 방향으로 Y축 회전
+            Vector3 lookDir = camPos - pos;
+            lookDir.y = 0f;
+            Quaternion rot = lookDir.sqrMagnitude > 0.001f
+                ? Quaternion.LookRotation(lookDir)
+                : Quaternion.identity;
+
+            GameObject enemy = Instantiate(prefabs[i], pos, rot);
+
+            if (FightSetupData.enemyScales != null && i < FightSetupData.enemyScales.Length)
+                enemy.transform.localScale = FightSetupData.enemyScales[i];
+
             spawnedEnemies.Add(enemy);
         }
 
+        FightSetupData.Clear();
         checkingClear = true;
     }
 
     void OnStageClear()
     {
-        StartCoroutine(NextStageSequence());
+        StartCoroutine(ReturnToMain());
     }
 
-    IEnumerator NextStageSequence()
+    IEnumerator ReturnToMain()
     {
-        yield return new WaitForSeconds(nextStageDelay);
-        StartNextStage();
-    }
-
-    void OnAllStagesClear()
-    {
-        // 게임 클리어 (추후 확장)
-        Debug.Log("All stages cleared!");
+        yield return new WaitForSeconds(clearDelay);
+        SceneManager.LoadScene("Main");
     }
 
     void ClearSpawnedEnemies()

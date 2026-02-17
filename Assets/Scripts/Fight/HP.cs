@@ -22,6 +22,7 @@ public class HP : MonoBehaviour
     private Renderer[] renderers;
     private Material[] originalMaterials;
     private float flashTimer;
+    private Animator anim;
 
     public int CurrentHP => currentHP;
     public int MaxHP => maxHP;
@@ -32,6 +33,7 @@ public class HP : MonoBehaviour
     {
         currentHP = maxHP;
         originalPosition = transform.position;
+        anim = GetComponentInChildren<Animator>();
         CacheRenderers();
     }
 
@@ -66,6 +68,9 @@ public class HP : MonoBehaviour
         originalPosition = transform.position;
         shakeTimer = hitShakeDuration;
         FlashMaterial();
+
+        if (anim != null)
+            anim.SetTrigger("Damaged");
 
         if (onDamaged != null)
             onDamaged.Invoke();

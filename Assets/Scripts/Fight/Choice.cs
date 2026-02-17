@@ -4,17 +4,16 @@ using UnityEngine.UI;
 
 public class Choice : MonoBehaviour
 {
-    [Header("Choice 설정")]
+    [Header("Choice 설정 (Dice: 클론, 적: 머티리얼)")]
     public Material choiceMaterial;
     public float choiceScale = 1.5f;
+
+    [Header("Select 설정 (적: 머티리얼)")]
+    public Material selectMaterial;
 
     [Header("Lock 설정 (Dice 전용)")]
     public Material lockMaterial;
     public float lockScale = 1.3f;
-
-    [Header("Select 설정 (Dice 외)")]
-    public Material selectMaterial;
-    public float selectScale = 1.3f;
 
     [Header("호버 툴팁")]
     public TMP_FontAsset tooltipFont;
@@ -36,7 +35,12 @@ public class Choice : MonoBehaviour
 
     // Dice 외 선택 상태
     private GameObject selectedObject;
-    private GameObject selectClone;
+
+    // 적 머티리얼 하이라이트 (클론 대신 직접 교체)
+    private Renderer[] hoverRenderers;
+    private Material[][] hoverOriginalMats;
+    private Renderer[] selectRenderers;
+    private Material[][] selectOriginalMats;
 
     // 호버 툴팁
     private Canvas tooltipCanvas;
@@ -45,10 +49,14 @@ public class Choice : MonoBehaviour
     private RectTransform tooltipRT;
     private int currentHoverDiceIndex = -1;
 
+    private DiceUI diceUI;
+    private Attack attack;
+    private RetryUI retryUI;
+    private GameFlow gameFlow;
+
     void Start()
     {
         mainCam = Camera.main;
-
         role = FindObjectOfType<Role>();
         diceUI = FindObjectOfType<DiceUI>();
         attack = FindObjectOfType<Attack>();
@@ -62,11 +70,6 @@ public class Choice : MonoBehaviour
         }
     }
 
-    private DiceUI diceUI;
-    private Attack attack;
-    private RetryUI retryUI;
-    private GameFlow gameFlow;
-
     void Update()
     {
         // 적 턴에는 모든 입력 차단
@@ -75,6 +78,7 @@ public class Choice : MonoBehaviour
             if (currentHoverObject != null)
             {
                 DestroyChoice();
+                RestoreHoverHighlight();
                 DestroyTooltip();
                 currentHoverObject = null;
                 currentHoverDiceIndex = -1;
@@ -88,6 +92,7 @@ public class Choice : MonoBehaviour
             if (currentHoverObject != null)
             {
                 DestroyChoice();
+                RestoreHoverHighlight();
                 DestroyTooltip();
                 currentHoverObject = null;
                 currentHoverDiceIndex = -1;
@@ -112,12 +117,10 @@ public class Choice : MonoBehaviour
     {
         Ray ray = mainCam.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
-
         GameObject target = null;
 
         if (Physics.Raycast(ray, out hit))
         {
-            // Selectable 레이어에 해당하는 루트 개체 찾기
             GameObject hitObj = GetSelectableRoot(hit.collider.gameObject);
             if (hitObj != null)
                 target = hitObj;
@@ -128,6 +131,7 @@ public class Choice : MonoBehaviour
             if (currentHoverObject != null)
             {
                 DestroyChoice();
+                RestoreHoverHighlight();
                 DestroyTooltip();
                 currentHoverObject = null;
                 currentHoverDiceIndex = -1;
@@ -138,6 +142,7 @@ public class Choice : MonoBehaviour
         if (currentHoverObject == target) return;
 
         DestroyChoice();
+        RestoreHoverHighlight();
         DestroyTooltip();
         currentHoverObject = target;
         currentHoverDiceIndex = -1;
@@ -148,7 +153,6 @@ public class Choice : MonoBehaviour
             int diceIndex = GetDiceIndex(target);
             if (diceIndex >= 0 && lockedDice[diceIndex])
             {
-                // lock된 다이스도 기여도 툴팁은 표시
                 if (diceUI != null && role != null && role.HasRolled)
                 {
                     currentHoverDiceIndex = diceIndex;
@@ -161,7 +165,10 @@ public class Choice : MonoBehaviour
         // 이미 select된 개체면 호버 효과 안 띄움
         if (selectedObject == target) return;
 
-        CreateClone(target, choiceMaterial, choiceScale, ref currentChoice);
+        if (target.CompareTag("Dice"))
+            CreateClone(target, choiceMaterial, choiceScale, ref currentChoice);
+        else
+            ApplyHighlight(target, choiceMaterial, ref hoverRenderers, ref hoverOriginalMats);
 
         // 다이스 호버 시 기여도 툴팁 표시
         if (target.CompareTag("Dice") && diceUI != null && role != null && role.HasRolled)
@@ -212,29 +219,21 @@ public class Choice : MonoBehaviour
         }
         else
         {
-            // Dice 외: select/deselect 토글
+            // Dice 외: select/deselect 토글 (머티리얼 교체)
             if (selectedObject == currentHoverObject)
             {
                 // 이미 선택된 개체 → 해제
-                if (selectClone != null)
-                {
-                    Destroy(selectClone);
-                    selectClone = null;
-                }
+                RestoreSelectHighlight();
                 selectedObject = null;
-                CreateClone(currentHoverObject, choiceMaterial, choiceScale, ref currentChoice);
+                ApplyHighlight(currentHoverObject, choiceMaterial, ref hoverRenderers, ref hoverOriginalMats);
             }
             else
             {
-                // 기존 선택 해제
-                if (selectClone != null)
-                {
-                    Destroy(selectClone);
-                    selectClone = null;
-                }
+                // 기존 선택 해제 + 새 선택
+                RestoreSelectHighlight();
+                RestoreHoverHighlight();
                 selectedObject = currentHoverObject;
-                DestroyChoice();
-                CreateClone(currentHoverObject, selectMaterial, selectScale, ref selectClone);
+                ApplyHighlight(currentHoverObject, selectMaterial != null ? selectMaterial : choiceMaterial, ref selectRenderers, ref selectOriginalMats);
             }
         }
     }
@@ -252,20 +251,18 @@ public class Choice : MonoBehaviour
         }
 
         if (attack != null && attack.IsAttacking) return;
-        
+
         if (role.HasRolled && selectedObject != null && diceUI != null && diceUI.LastScore > 0)
         {
-            // select된 개체 있으면: Attack으로 위임 (빔 + 데미지 + lock해제 + 롤)
             if (attack != null)
                 attack.Execute(selectedObject, diceUI.LastScore);
         }
         else
         {
-            // 리롤: 남은 횟수 확인
             if (!role.IsRolling)
             {
                 if (retryUI != null && !retryUI.ConsumeRetry())
-                    return; // 리롤 횟수 소진
+                    return;
 
                 role.RollAllDice();
             }
@@ -274,11 +271,7 @@ public class Choice : MonoBehaviour
 
     public void Deselect()
     {
-        if (selectClone != null)
-        {
-            Destroy(selectClone);
-            selectClone = null;
-        }
+        RestoreSelectHighlight();
         selectedObject = null;
     }
 
@@ -299,6 +292,51 @@ public class Choice : MonoBehaviour
 
     public GameObject SelectedObject => selectedObject;
 
+    // ===== 머티리얼 하이라이트 (적 등 Dice 외) =====
+
+    void ApplyHighlight(GameObject target, Material mat, ref Renderer[] renderers, ref Material[][] originals)
+    {
+        if (mat == null) return;
+
+        renderers = target.GetComponentsInChildren<Renderer>();
+        originals = new Material[renderers.Length][];
+
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            originals[i] = renderers[i].sharedMaterials;
+            Material[] mats = new Material[originals[i].Length];
+            for (int j = 0; j < mats.Length; j++)
+                mats[j] = mat;
+            renderers[i].sharedMaterials = mats;
+        }
+    }
+
+    void RestoreHoverHighlight()
+    {
+        RestoreHighlight(ref hoverRenderers, ref hoverOriginalMats);
+    }
+
+    void RestoreSelectHighlight()
+    {
+        RestoreHighlight(ref selectRenderers, ref selectOriginalMats);
+    }
+
+    void RestoreHighlight(ref Renderer[] renderers, ref Material[][] originals)
+    {
+        if (renderers == null || originals == null) return;
+
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null)
+                renderers[i].sharedMaterials = originals[i];
+        }
+
+        renderers = null;
+        originals = null;
+    }
+
+    // ===== 클론 생성 (Dice 전용) =====
+
     void CreateClone(GameObject target, Material mat, float scale, ref GameObject result)
     {
         if (mat == null) return;
@@ -307,9 +345,9 @@ public class Choice : MonoBehaviour
         if (mf == null || mf.sharedMesh == null) return;
 
         GameObject clone = new GameObject("[Clone]");
-        clone.transform.position = target.transform.position;
-        clone.transform.rotation = target.transform.rotation;
-        clone.transform.localScale = target.transform.lossyScale * scale;
+        clone.transform.position = mf.transform.position;
+        clone.transform.rotation = mf.transform.rotation;
+        clone.transform.localScale = mf.transform.lossyScale * scale;
 
         MeshFilter cloneMF = clone.AddComponent<MeshFilter>();
         cloneMF.sharedMesh = mf.sharedMesh;
@@ -321,9 +359,11 @@ public class Choice : MonoBehaviour
         result = clone;
     }
 
+    // ===== 클론 위치 동기화 (Dice 전용) =====
+
     void UpdateClonePositions()
     {
-        // choice 복제본 → 호버 중인 원본 따라가기
+        // choice 복제본 → 호버 중인 주사위 따라가기
         if (currentChoice != null && currentHoverObject != null)
         {
             currentChoice.transform.position = currentHoverObject.transform.position;
@@ -341,13 +381,6 @@ public class Choice : MonoBehaviour
             }
         }
 
-        // select 복제본 → 선택된 원본 따라가기
-        if (selectClone != null && selectedObject != null)
-        {
-            selectClone.transform.position = selectedObject.transform.position;
-            selectClone.transform.rotation = selectedObject.transform.rotation;
-        }
-
         // 툴팁 위치 갱신
         UpdateTooltipPosition();
     }
@@ -360,6 +393,8 @@ public class Choice : MonoBehaviour
             currentChoice = null;
         }
     }
+
+    // ===== 유틸 =====
 
     GameObject GetSelectableRoot(GameObject obj)
     {

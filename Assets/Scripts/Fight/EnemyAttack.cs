@@ -34,6 +34,7 @@ public class EnemyAttack : MonoBehaviour
     private GameFlow gameFlow;
     private DiceUI diceUI;
     private Attack attack;
+    private Animator anim;
     private GameObject[] diceObjects;
     private bool isAttacking;
     private bool isRolling;
@@ -62,6 +63,7 @@ public class EnemyAttack : MonoBehaviour
         gameFlow = FindObjectOfType<GameFlow>();
         diceUI = FindObjectOfType<DiceUI>();
         attack = FindObjectOfType<Attack>();
+        anim = GetComponentInChildren<Animator>();
 
         if (gameFlow != null)
             gameFlow.RegisterEnemy(this);
@@ -78,7 +80,17 @@ public class EnemyAttack : MonoBehaviour
         DestroyDice();
     }
 
-    public IEnumerator ExecuteAttack(GameObject target)
+    /// <summary>
+    /// 카메라 하단 중앙을 타겟 위치로 계산
+    /// </summary>
+    Vector3 GetAttackTargetPos()
+    {
+        Camera cam = Camera.main;
+        float dist = Vector3.Distance(cam.transform.position, transform.position);
+        return cam.ViewportToWorldPoint(new Vector3(0.5f, 0f, dist));
+    }
+
+    public IEnumerator ExecuteAttack()
     {
         if (isAttacking || IsDead) yield break;
 
@@ -123,20 +135,20 @@ public class EnemyAttack : MonoBehaviour
 
         yield return new WaitForSeconds(postRollDelay);
 
-        // 4. VFX 발사
-        yield return FireProjectiles(target);
+        // 4. 공격 애니메이션
+        if (anim != null)
+            anim.SetTrigger("Attack");
 
-        // 5. 데미지 적용
-        if (target != null)
-        {
-            HP targetHP = target.GetComponent<HP>();
-            if (targetHP != null)
-                targetHP.TakeDamage(damage);
-        }
+        // 5. VFX 발사 (카메라 하단으로)
+        yield return FireProjectiles();
+
+        // 6. 데미지 적용 (GameFlow.playerHP)
+        if (gameFlow != null && gameFlow.playerHP != null)
+            gameFlow.playerHP.TakeDamage(damage);
 
         yield return new WaitForSeconds(postAttackDelay);
 
-        // 6. 주사위 제거
+        // 7. 주사위 제거
         DestroyDice();
 
         isAttacking = false;
@@ -437,9 +449,9 @@ public class EnemyAttack : MonoBehaviour
         return best;
     }
 
-    IEnumerator FireProjectiles(GameObject target)
+    IEnumerator FireProjectiles()
     {
-        if (diceObjects == null || target == null) yield break;
+        if (diceObjects == null) yield break;
 
         // Attack의 vfxDatabase에서 bullet 자동 가져오기
         if (attack == null)
@@ -474,9 +486,11 @@ public class EnemyAttack : MonoBehaviour
 
         if (bulletPrefab == null) yield break;
 
+        // 카메라 하단 중앙을 타겟으로
+        Vector3 targetPos = GetAttackTargetPos();
+
         List<GameObject> spawned = new List<GameObject>();
         float longestWait = 0f;
-        Vector3 targetPos = target.transform.position;
 
         bool isBaseVfx = bulletPrefab.GetComponent<BaseVfx>() != null;
 

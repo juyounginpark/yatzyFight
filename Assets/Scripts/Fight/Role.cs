@@ -7,6 +7,7 @@ public class Role : MonoBehaviour
     public GameObject dicePrefab;
     public int diceCount = 5;
     public float spacing = 2f;
+    public LayerMask diceLayer;
 
     [Header("굴림 애니메이션")]
     public float rollDuration = 1.2f;
@@ -203,7 +204,12 @@ public class Role : MonoBehaviour
             diceObjects[i] = Instantiate(dicePrefab, position, Quaternion.identity, transform);
             diceObjects[i].name = "Dice_" + (i + 1);
             diceObjects[i].tag = "Dice";
-            SetLayerRecursive(diceObjects[i], LayerMask.NameToLayer("Selectable"));
+            // diceLayer에서 실제 레이어 번호 추출
+            int layer = 0;
+            int mask = diceLayer.value;
+            while (mask > 1) { mask >>= 1; layer++; }
+            if (diceLayer.value != 0)
+                SetLayerRecursive(diceObjects[i], layer);
 
             idleBaseY[i] = position.y;
             idleSpeed[i] = Random.Range(idleSpeedMin, idleSpeedMax);
