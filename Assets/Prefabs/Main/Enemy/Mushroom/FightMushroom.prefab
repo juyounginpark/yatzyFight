@@ -213,6 +213,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2133764896753214668, guid: 58d009f2315502c4b8db9a6fecee5fa7, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8701774867697595600}
+    - targetCorrespondingSourceObject: {fileID: 2133764896753214668, guid: 58d009f2315502c4b8db9a6fecee5fa7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1185019282959453282}
   m_SourcePrefab: {fileID: 100100000, guid: 58d009f2315502c4b8db9a6fecee5fa7, type: 3}
 --- !u!1 &8437448135185624052 stripped
 GameObject:
@@ -231,7 +234,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d08e19f0ef9d415419a9a87f8aae4b10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HP
-  maxHP: 30
+  maxHP: 100
   hitMaterial: {fileID: 2100000, guid: d49dc20d5c217a548a102b24dbd141c4, type: 2}
   hitShakeDuration: 0.3
   hitShakeIntensity: 0.2
@@ -285,6 +288,34 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.83659464, y: 0.9660792, z: 0.7067596}
   m_Center: {x: -0.03316281, y: 0.052803587, z: 0.5243946}
+--- !u!114 &1185019282959453282
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8437448135185624052}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa573f94d35756548a12d748a7cdd9a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyAttack
+  dicePrefab: {fileID: 5662041024626242717, guid: 712b798731578604da7750f99f43dadb, type: 3}
+  diceCount: 5
+  diceSpacing: 2
+  diceHeightPadding: 0.5
+  diceRotationOffset: {x: 315, y: 0, z: 0}
+  rollDuration: 1.2
+  rollSpeed: 900
+  curveHeight: 0.6
+  idleAmplitude: 0.15
+  idleSpeedMin: 1
+  idleSpeedMax: 1.8
+  projectileSpeed: 15
+  dotFireDelay: 0.08
+  preRollDelay: 0.5
+  postRollDelay: 0.5
+  postAttackDelay: 0.5
 --- !u!4 &8523970261219134261 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2215850680430412813, guid: 58d009f2315502c4b8db9a6fecee5fa7, type: 3}

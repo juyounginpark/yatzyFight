@@ -22,6 +22,10 @@ public class PlayerHPUI : MonoBehaviour
     public int dmgFontSize = 28;
     public Color dmgTextColor = Color.red;
 
+    [Header("피격 UI 오버레이")]
+    public GameObject damagedOverlay;
+    public float damagedOverlayDuration = 0.4f;
+
     private HP hp;
     private Canvas canvas;
     private RectTransform barRoot;
@@ -38,6 +42,9 @@ public class PlayerHPUI : MonoBehaviour
         GameFlow gameFlow = FindObjectOfType<GameFlow>();
         if (gameFlow != null && gameFlow.playerHP == null)
             gameFlow.playerHP = hp;
+
+        if (damagedOverlay != null)
+            damagedOverlay.SetActive(false);
 
         CreateUI();
     }
@@ -97,8 +104,25 @@ public class PlayerHPUI : MonoBehaviour
     {
         int damage = prevHP - hp.CurrentHP;
         if (damage > 0)
+        {
             SpawnDamageText(damage);
+            ShowDamagedOverlay();
+        }
         prevHP = hp.CurrentHP;
+    }
+
+    void ShowDamagedOverlay()
+    {
+        if (damagedOverlay == null) return;
+        StopCoroutine("AnimateDamagedOverlay");
+        StartCoroutine("AnimateDamagedOverlay");
+    }
+
+    System.Collections.IEnumerator AnimateDamagedOverlay()
+    {
+        damagedOverlay.SetActive(true);
+        yield return new WaitForSeconds(damagedOverlayDuration);
+        damagedOverlay.SetActive(false);
     }
 
     void Update()

@@ -16,6 +16,9 @@ public class EnemyAttack : MonoBehaviour
     public float rollDuration = 1.2f;
     public float rollSpeed = 900f;
 
+    [Header("주사위 커브 배치")]
+    public float curveHeight = 0.6f;
+
     [Header("Idle 애니메이션")]
     public float idleAmplitude = 0.15f;
     public float idleSpeedMin = 1.0f;
@@ -163,17 +166,22 @@ public class EnemyAttack : MonoBehaviour
         idleSpeeds = new float[count];
         idleOffsets = new float[count];
 
-        // enemy 크기 기반 상단 오프셋 계산
+        // enemy 콜라이더 기준 상단 오프셋 계산
         float topY = 0f;
-        Renderer rend = GetComponentInChildren<Renderer>();
-        if (rend != null)
-            topY = rend.bounds.max.y - transform.position.y;
+        Collider col = GetComponentInChildren<Collider>();
+        if (col != null)
+            topY = col.bounds.max.y - transform.position.y;
         float spawnHeight = topY + diceHeightPadding;
 
         for (int i = 0; i < count; i++)
         {
             float x = (i - (count - 1) / 2f) * diceSpacing;
-            Vector3 pos = transform.position + new Vector3(x, spawnHeight, 0f);
+
+            // 무지개 커브: 중앙이 높고 양끝이 낮은 포물선
+            float t = (count > 1) ? (i - (count - 1) / 2f) / ((count - 1) / 2f) : 0f;
+            float curve = (1f - t * t) * curveHeight;
+
+            Vector3 pos = transform.position + new Vector3(x, spawnHeight + curve, 0f);
 
             int face = Random.Range(0, Role.faceRotations.Length);
             diceObjects[i] = Instantiate(dicePrefab, pos, Quaternion.Euler(Role.faceRotations[face]));

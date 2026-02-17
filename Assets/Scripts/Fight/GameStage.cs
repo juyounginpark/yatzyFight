@@ -47,8 +47,6 @@ public class GameStage : MonoBehaviour
     {
         ClearSpawnedEnemies();
 
-        yield return new WaitForSeconds(0.5f);
-
         GameObject[] prefabs = FightSetupData.enemyPrefabs;
         if (prefabs == null || prefabs.Length == 0)
         {
